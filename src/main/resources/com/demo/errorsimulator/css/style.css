@@ -1,6 +1,34 @@
-.text{
-    -fx-font-size: 30px;
+/* Estilo utilizado nos elementos, que estão na coluna da tabela de resultados */
+.texto{
+    -fx-font-size: 12px;
     -fx-font-weight: bold;
     -fx-text-fill: black;
     -fx-text-alignment: justify
+}
+
+/* Estilo do botão */
+.bt {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 25 10 25;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4, 0, 0, 2);
+    -fx-border-color: transparent;
+    -fx-transition: all 0.2s ease;  /* animação suave */
+}
+
+/* Efeito quando o mouse passa por cima */
+.bt:hover {
+    -fx-background-color: #45a049; /* verde mais escuro */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 6, 0, 0, 3);
+}
+
+/* Efeito quando o botão é pressionado */
+.bt:pressed {
+    -fx-background-color: #3e8e41; /* verde ainda mais escuro */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 2, 0, 0, 1);
 }

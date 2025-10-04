@@ -1,12 +1,15 @@
 package com.demo.errorsimulator;
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CalculadoraErros {
 
     // Converte string para BigDecimal
-    public static BigDecimal tranformarNumero(String entrada) {
+    public static BigDecimal transformarNumero(String entrada) {
         // Verifica se a entrada é nula.
         if (entrada == null) throw new IllegalArgumentException("Entrada nula");
 
@@ -32,30 +35,44 @@ public class CalculadoraErros {
 
 
     // Operações aritméticas com BigDecimal
-    public static BigDecimal operar(BigDecimal x, BigDecimal y, String op, int n, String metodo) {
-        // Se a operação for inválida, lança exceção
-        return switch (op) {
-            case "+" -> x.add(y);          // Soma
-            case "-" -> x.subtract(y);     // Subtração
-            case "*" -> x.multiply(y);     // Multiplicação
-            case "/" -> {
-                // Cria a configuração de arredondamento para divisão
-                MathContext mc = new MathContext(
-                        n,
-                        metodo.equalsIgnoreCase("truncamento") ? RoundingMode.DOWN : RoundingMode.HALF_UP
-                );
-                // Realiza a divisão com precisão controlada
-                yield x.divide(y, mc);
-                // Realiza a divisão com precisão controlada
+    public static BigDecimal operar(BigDecimal x, BigDecimal y, String op, int n, String metodo){
+        switch (op) {
+            case "+" -> {
+                return x.add(y);          // Soma
             }
-            // Gera uma exceção caso não seja apertado nenhum dos botões de operações(+, -, *, /)
+            case "-" -> {
+                return x.subtract(y);     // Subtração
+            }
+            case "++" -> {                 // SomaSucessiva
+                BigDecimal resultado = BigDecimal.ZERO;
+                for (int i = 0; i < y.intValue(); i++) {
+                    resultado = resultado.add(x);
+                    resultado = ajustarPrecisao(resultado, n, metodo);
+                }
+                return resultado;
+            }
+            case "--" -> {
+                BigDecimal resultado = BigDecimal.ZERO;
+                for (int i = 0; i < y.intValue(); i++) {
+                    resultado = resultado.subtract(x);
+                    resultado = ajustarPrecisao(resultado, n, metodo);
+                }
+                return resultado;   // SubtraçãoSucessiva
+            }
+            case "*" -> {
+                return x.multiply(y);     // Multiplicação
+            }
+            case "/" -> {
+                return x.divide(y, MathContext.DECIMAL128);       // Divisão
+            }
+            // Gera uma exceção caso não seja apertado nenhum dos botões de operações(+, ++, -, --, *, /)
             default -> throw new IllegalArgumentException("Operação inválida: " + op);
-        };
+        }
     }
 
 
     // Formata o número em notação entre 0 e 1
-    public static String formatarNumero(BigDecimal valor, int n) {
+    public static String formatarNumero(BigDecimal valor, int n, String metodo, int modo) {
         // Caso seja zero, já retorna o zero.
         if (valor.compareTo(BigDecimal.ZERO) == 0) return "0";
 
@@ -66,54 +83,94 @@ public class CalculadoraErros {
         int expoente = valor.precision() - valor.scale() - 1;
 
         // Normaliza o número para que a mantissa fique entre (0,1)
-        BigDecimal mantissa = valor.movePointLeft(expoente).divide(BigDecimal.TEN);
+        BigDecimal mantissa;
+        if(modo == 0){
+            mantissa = valor.movePointLeft(expoente).divide(BigDecimal.TEN, MathContext.DECIMAL128);
+        }else{
+            mantissa = valor.movePointLeft(expoente).multiply(new BigDecimal(10));
+        }
         expoente += 1;
-
-        // Trunca a mantissa para n dígitos significativos
-        mantissa = ajustarPrecisao(mantissa, n, "truncamento");
+        //mantissa = ajustarPrecisao(mantissa, n, metodo);
 
         // Retorna mantissa × 10^expoente
         return mantissa.stripTrailingZeros().toPlainString() + " × 10^" + expoente;
     }
 
 
+
+
+
     // Calcula e exibe resultado da operação
-    public static String calcular(String strX, String strY, String op, int n, String metodo) {
+    public static List<String[]> calcular(String strX, String strY, String op, int n, String metodo) {
         // Converte entradas de string para BigDecimal
-        BigDecimal x = tranformarNumero(strX);
-        BigDecimal y = tranformarNumero(strY);
+        BigDecimal x = transformarNumero(strX);
+        BigDecimal y = transformarNumero(strY);
 
-        // Calcula o valor exato da operação
-        BigDecimal valorExato = operar(x, y, op, n, metodo);
+        // Calcula valor exato da operação
+        BigDecimal valorExato;
+        if(op.equals("++") || op.equals("--")){
+            if (op.equals("++")){
+                valorExato = operar(x, y, "*", n, metodo);
+            }else{
+                valorExato = operar(x, y, "/", n, metodo);
+            }
+        }else{
+            valorExato = operar(x, y, op, n, metodo);
+        }
 
-        // Aplica arredondamento nos operandos antes da operação
+        // Lista final
+        List<String[]> resultado = new ArrayList<>();
+        resultado.add(new String[]{"Operação", strX + " " + op + " " + strY});
+        resultado.add(new String[]{"Método", metodo});
+        resultado.add(new String[]{"Dígitos", String.valueOf(n)});
+        resultado.add(new String[]{"Valor Exato", formatarNumero(valorExato, n, metodo, 0)});
+        resultado.add(new String[]{null, null});    // linha vazia
+
+        switch (metodo) {
+            case "Arredondamento" -> {
+                resultado.add(new String[]{"Arredondamento:", null});
+                resultado.addAll(calcularPorMetodo(x, y, valorExato, op, n, "arredondamento"));
+            }
+            case "Truncamento" -> {
+                resultado.add(new String[]{"Truncamento:", null});
+                resultado.addAll(calcularPorMetodo(x, y, valorExato, op, n, "truncamento"));
+            }
+            case "Todos" -> {
+                resultado.add(new String[]{"Arredondamento:", null});
+                resultado.addAll(calcularPorMetodo(x, y, valorExato, op, n, "arredondamento"));
+
+                resultado.add(new String[]{null, null});    // linha vazia
+                resultado.add(new String[]{"Truncamento:", null});
+                resultado.addAll(calcularPorMetodo(x, y, valorExato, op, n, "truncamento"));
+            }
+            default -> throw new IllegalArgumentException("Método inválido: " + metodo);
+        }
+
+        return resultado;
+    }
+
+    // Método auxiliar para evitar duplicação
+    private static List<String[]> calcularPorMetodo(BigDecimal x, BigDecimal y, BigDecimal valorExato, String op, int n, String metodo) {
+        List<String[]> resultado = new ArrayList<>();
+
         BigDecimal xAprox = ajustarPrecisao(x, n, metodo);
         BigDecimal yAprox = ajustarPrecisao(y, n, metodo);
 
-        // Calcula valor aproximado da operação (operandos já arredondados)
         BigDecimal valorAprox = ajustarPrecisao(operar(xAprox, yAprox, op, n, metodo), n, metodo);
-
-        // Calcula erro absoluto = |valorExato - valorAprox|
         BigDecimal erroAbs = valorExato.subtract(valorAprox).abs();
+        BigDecimal erroRel;
+        if (valorAprox.compareTo(BigDecimal.ZERO) == 0) {
+            erroRel = null;
+        }else{
+            erroRel = ajustarPrecisao(erroAbs.divide(valorAprox.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ONE : valorAprox, MathContext.DECIMAL128), n, metodo);
+        }
 
-        // Calcula erro relativo = erroAbs / valorAprox
-        // Se valorAprox == 0, evita divisão por zero usando BigDecimal.ONE
-        BigDecimal erroRel = erroAbs.divide(
-                valorAprox.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ONE : valorAprox,
-                new MathContext(n, RoundingMode.HALF_UP)
-        );
+        resultado.add(new String[]{"Valor Aprox", formatarNumero(valorAprox, n, metodo, 0)});
+        resultado.add(new String[]{"Erro Absoluto", formatarNumero(erroAbs, n, metodo, 0)});
+        resultado.add(new String[]{"Erro Relativo", erroRel == null ? "Divisão por zero!" : formatarNumero(erroRel, n, metodo, 1) + "%"});
 
-        // Retorna relatório formatado com todos os resultados
-        return "Operação: " + formatarNumero(xAprox, n) + " " + op + " " + formatarNumero(yAprox, n)
-                + "\nMétodo: " + metodo + " | "
-                + "\nDígitos: " + n
-                + "\nValor Exato: " + formatarNumero(valorExato, n)
-                + "\nValor Aprox: " + formatarNumero(valorAprox, n)
-                + "\nErro Absoluto: " + formatarNumero(erroAbs, n)
-                + "\nErro Relativo: " + formatarNumero(erroRel, n);
+        return resultado;
     }
-
-
 
 
 
