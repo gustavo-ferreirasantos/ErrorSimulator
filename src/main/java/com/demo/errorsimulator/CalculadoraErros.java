@@ -98,8 +98,6 @@ public class CalculadoraErros {
 
 
 
-
-
     // Calcula e exibe resultado da operação
     public static List<String[]> calcular(String strX, String strY, String op, int n, String metodo) {
         // Converte entradas de string para BigDecimal
@@ -117,6 +115,8 @@ public class CalculadoraErros {
         }else{
             valorExato = operar(x, y, op, n, metodo);
         }
+        //Evita que tenha um número maior que a tela do programa
+        valorExato = ajustarPrecisao(valorExato, n+5, metodo);
 
         // Lista final
         List<String[]> resultado = new ArrayList<>();
@@ -157,7 +157,7 @@ public class CalculadoraErros {
         BigDecimal yAprox = ajustarPrecisao(y, n, metodo);
 
         BigDecimal valorAprox = ajustarPrecisao(operar(xAprox, yAprox, op, n, metodo), n, metodo);
-        BigDecimal erroAbs = valorExato.subtract(valorAprox).abs();
+        BigDecimal erroAbs = ajustarPrecisao(valorExato.subtract(valorAprox).abs(), n+3, metodo);
         BigDecimal erroRel;
         if (valorAprox.compareTo(BigDecimal.ZERO) == 0) {
             erroRel = null;

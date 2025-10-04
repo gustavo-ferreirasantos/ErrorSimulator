@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -15,15 +16,20 @@ public class StartApplication extends Application {
     private static Scene resolucaoScene;
 
     @Override
-    public void start(Stage primarystage) throws IOException {
-        stage = primarystage;
-
+    public void start(Stage primaryStage) throws IOException {
+        stage = primaryStage;
+        // -------- Telas -----------
         Parent fxml1 = FXMLLoader.load(Objects.requireNonNull(StartApplication.class.getResource("FXML/Dados.fxml")));
         Parent fxml2 = FXMLLoader.load(Objects.requireNonNull(StartApplication.class.getResource("FXML/Resultado.fxml")));
         dadosScene = new Scene(fxml1);
         resolucaoScene = new Scene(fxml2);
-        primarystage.setScene(dadosScene);
-        primarystage.show();
+        primaryStage.setScene(dadosScene);
+
+        // -------- ICON -----------
+        Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("Images/icon.png")));
+        primaryStage.getIcons().add(icon);
+
+        primaryStage.show();
     }
 
     public static void updateScene() {
