@@ -36,3 +36,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+##Pasta com as builds do projeto
+.target
